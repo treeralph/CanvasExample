@@ -1,8 +1,10 @@
 package com.example.canvasexample.composable
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateOffsetAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -112,13 +114,12 @@ fun MotionScaffold(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun drawNode(
-    id: Long,
     node: Node,
     scale: Float,
     scaleAlpha: Float,
     scaleBeta: Float,
-    nodeClickListener: (Long) -> Unit = {},
-    nodeLongClickListener: (Long) -> Unit = {},
+    nodeClickListener: (Boolean) -> Unit = {} /** node implicit editing */,
+    nodeLongClickListener: () -> Unit = {} /** node explicit editing */,
     onDragStart: () -> Unit = {},
     onDragEnd: (Double, Double) -> Unit = { _, _ -> },
     onNodeMoved: (Double, Double) -> Unit = { _, _ -> },
@@ -136,14 +137,17 @@ fun drawNode(
 
     val outBoundX by animateDpAsState(
         targetValue = if (!expanded) x2dp - alpha2dp else x2dp - beta2dp,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = ""
     )
     val outBoundY by animateDpAsState(
         targetValue = if (!expanded) y2dp - alpha2dp else y2dp - beta2dp,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = ""
     )
     val inBound by animateDpAsState(
         targetValue = if (!expanded) alpha2dp * 0.5f else beta2dp * 0.5f,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = ""
     )
 
@@ -154,9 +158,9 @@ fun drawNode(
             .combinedClickable(
                 onClick = {
                     expanded = !expanded
-                    nodeClickListener(id)
+                    nodeClickListener(expanded)
                 },
-                onLongClick = { nodeLongClickListener(id) }
+                onLongClick = { nodeLongClickListener() }
             )
             .animateContentSize()
             .clip(CircleShape)
@@ -166,6 +170,11 @@ fun drawNode(
                         onDragStart()
                     },
                     onDragEnd = {
+                        /**
+                         * onDragEnd
+                         *      if ( node connecting ) nodeConnect()
+                         *      else status back
+                         * */
                         onDragEnd(x, y)
                     },
                     onDragCancel = {

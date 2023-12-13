@@ -27,15 +27,27 @@ data class Node(
     var weight: Double = 1.0,
     @ColumnInfo(defaultValue = "CURRENT_TIMESTAMP")
     var createdTime: String = "",
+    @ColumnInfo(defaultValue = "")
+    var imgUri: String = "",
+    @ColumnInfo(defaultValue = "")
+    var linkUrl: String = "",
+    @ColumnInfo(defaultValue = "")
+    var content: String = "",
+    @ColumnInfo(defaultValue = "")
+    var description: String = "",
+    @ColumnInfo(defaultValue = "")
+    var nodeInfo: String = "",
+    @ColumnInfo(defaultValue = "")
+    var nodeColor: String = ""
 )
 
 @Entity(tableName = "Edge")
 data class Edge(
     @PrimaryKey(autoGenerate = true) var id: Long = -1,
     @ColumnInfo(defaultValue = "-1")
-    var node1: Int = 0,
+    var node1: Long = 0,
     @ColumnInfo(defaultValue = "-1")
-    var node2: Int = 0,
+    var node2: Long = 0,
     @ColumnInfo(defaultValue = "10.0")
     var weight: Double = 10.0,
     @ColumnInfo(defaultValue = "CURRENT_TIMESTAMP")

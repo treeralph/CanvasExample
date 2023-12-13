@@ -40,19 +40,20 @@ fun applyAttraction(
     attraction: AttractionForce,
     nodes: MutableList<Node>,
     edges: MutableList<Edge>,
+    nodeId2Index: MutableMap<Long, Int>,
     edgeWeightInfluence: Double
 ) {
     if(edgeWeightInfluence == 0.0) {
         edges.forEach { edge ->
-            attraction.apply(nodes[edge.node1], nodes[edge.node2], 1.0)
+            attraction.apply(nodes[nodeId2Index[edge.node1]!!], nodes[nodeId2Index[edge.node2]!!], 1.0)
         }
     }else if(edgeWeightInfluence == 1.0) {
         edges.forEach { edge ->
-            attraction.apply(nodes[edge.node1], nodes[edge.node2], edge.weight)
+            attraction.apply(nodes[nodeId2Index[edge.node1]!!], nodes[nodeId2Index[edge.node2]!!], edge.weight)
         }
     }else {
         edges.forEach { edge ->
-            attraction.apply(nodes[edge.node1], nodes[edge.node2], Math.pow(edge.weight, edgeWeightInfluence))
+            attraction.apply(nodes[nodeId2Index[edge.node1]!!], nodes[nodeId2Index[edge.node2]!!], Math.pow(edge.weight, edgeWeightInfluence))
         }
     }
 }

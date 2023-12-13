@@ -52,6 +52,11 @@ android {
 
 dependencies {
 
+    implementation("org.jsoup:jsoup:1.17.1")
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    implementation("androidx.compose.runtime:runtime-tracing:1.0.0-alpha03")
+
     val room_version = "2.5.0"
 
     implementation("androidx.room:room-runtime:$room_version")

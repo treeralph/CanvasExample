@@ -8,14 +8,22 @@ import androidx.room.Update
 
 @Dao
 interface NodeDao {
-    @Query("INSERT INTO Node (x, y) VALUES (:x, :y)")
-    fun insertNode(x: Double, y: Double): Long
+    @Query("INSERT INTO Node (x, y, imgUri, linkUrl, content, description) " +
+            "VALUES (:x, :y, :imgUri, :linkUrl, :content, :description)")
+    fun insertNode(
+        x: Double,
+        y: Double,
+        imgUri: String = "",
+        linkUrl: String = "",
+        content: String = "",
+        description: String = ""
+    ): Long
     @Insert
-    fun insertNodes(vararg nodes: Node)
+    fun insertNodes(nodes: List<Node>)
     @Update
-    fun updateNodes(vararg nodes: Node)
+    fun updateNodes(nodes: List<Node>)
     @Delete
-    fun deleteNodes(vararg nodes: Node)
+    fun deleteNodes(nodes: List<Node>)
     @Query("SELECT * FROM Node")
     fun getAllNodes(): MutableList<Node>
     @Query("SELECT * FROM Node ORDER BY createdTime DESC LIMIT 1")
