@@ -10,7 +10,7 @@ class Quadtree(
     var sumMass = 0.0
     var centerX = 0.0
     var centerY = 0.0
-    var size = 0.0
+    var size = Double.MIN_VALUE
 
     var NWTree: Quadtree? = null
     var NETree: Quadtree? = null
@@ -18,21 +18,23 @@ class Quadtree(
     var SETree: Quadtree? = null
 
     init {
-        var sumX = 0.0
-        var sumY = 0.0
-        nodes.forEach { node ->
-            sumMass += node.mass
-            sumX += node.x * node.mass
-            sumY += node.y * node.mass
-        }
-        centerX = sumX / sumMass
-        centerY = sumY / sumMass
+        if(nodes.size > 0) {
+            var sumX = 0.0
+            var sumY = 0.0
+            nodes.forEach { node ->
+                sumMass += node.mass
+                sumX += node.x * node.mass
+                sumY += node.y * node.mass
+            }
+            centerX = sumX / sumMass
+            centerY = sumY / sumMass
 
-        nodes.forEach { node ->
-            var distance = sqrt(
-                (node.x - centerX) * (node.x - centerX) + (node.y - centerY) * (node.y - centerY)
-            )
-            size = max(size, 2 * distance)
+            nodes.forEach { node ->
+                var distance = sqrt(
+                    (node.x - centerX) * (node.x - centerX) + (node.y - centerY) * (node.y - centerY)
+                )
+                size = max(size, 2 * distance)
+            }
         }
     }
 

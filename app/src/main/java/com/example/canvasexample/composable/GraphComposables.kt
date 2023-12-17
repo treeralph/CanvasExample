@@ -1,8 +1,10 @@
 package com.example.canvasexample.composable
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -40,7 +42,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.canvasexample.db.Node
 import com.example.canvasexample.pixelToDp
@@ -52,8 +56,8 @@ import kotlin.math.min
 @Composable
 fun MotionScaffold(
     modifier: Modifier = Modifier,
-    maxZoom: Float = 3.0f,
-    minZoom: Float = 0.3f,
+    maxZoom: Float = 1.3f,
+    minZoom: Float = 0.5f,
     topBar: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
@@ -79,6 +83,7 @@ fun MotionScaffold(
             scale *= zoomChange
         }
         offset += offsetChange
+        Log.e("TAG", "MotionScaffold: $scale")
     }
 
     Scaffold(
@@ -111,6 +116,199 @@ fun MotionScaffold(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun drawNodeFixVersion2(
+    node: Node,
+    scaleAlpha: Float,
+    scaleBeta: Float,
+    nodeClickListener: (Boolean) -> Unit = {} /** node implicit editing */,
+    nodeLongClickListener: () -> Unit = {} /** node explicit editing */,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onNodeMoved: (Offset) -> Unit = { _ -> },
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    var alpha2dp = pixelToDp(scaleAlpha.toDouble())
+    var beta2dp = pixelToDp(scaleBeta.toDouble())
+
+    val nodeOutBoundOffset by animateIntOffsetAsState(
+        targetValue = if(!expanded) {
+            IntOffset(
+                x = node.x.toInt() - scaleAlpha.toInt(),
+                y = node.y.toInt() - scaleAlpha.toInt()
+            )
+        } else {
+            IntOffset(
+                x = node.x.toInt() - scaleBeta.toInt(),
+                y = node.y.toInt() - scaleBeta.toInt()
+            )
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "",
+    )
+
+    val nodeInBoundOffset by animateIntOffsetAsState(
+        targetValue = if(!expanded) {
+            IntOffset(
+                x = (scaleAlpha * 0.5).toInt(),
+                y = (scaleAlpha * 0.5).toInt()
+            )
+        } else {
+            IntOffset(
+                x = (scaleBeta * 0.5).toInt(),
+                y = (scaleBeta * 0.5).toInt()
+            )
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "",
+    )
+
+    Box(
+        modifier = Modifier
+            .offset { nodeOutBoundOffset }
+            .size(if (!expanded) alpha2dp * 2 else beta2dp * 2)
+            .combinedClickable(
+                onClick = {
+                    expanded = !expanded
+                    nodeClickListener(expanded)
+                },
+                onLongClick = { nodeLongClickListener() }
+            )
+            .animateContentSize()
+            .clip(CircleShape)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { onDragStart() },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragEnd() }
+                ) { change, dragAmount ->
+                    change.consume()
+                    onNodeMoved(dragAmount)
+                }
+            }
+    ) {
+        Spacer(
+            modifier = Modifier
+                .offset { nodeInBoundOffset }
+                .size(if (!expanded) alpha2dp else beta2dp)
+                .clip(CircleShape)
+                .animateContentSize()
+                .background(color = MaterialTheme.colorScheme.onSecondary),
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun drawNodeFixVersion(
+    node: Node,
+    scaleAlpha: Float,
+    scaleBeta: Float,
+    nodeClickListener: (Boolean) -> Unit = {} /** node implicit editing */,
+    nodeLongClickListener: () -> Unit = {} /** node explicit editing */,
+    onDragStart: () -> Unit = {},
+    onDragEnd: (Double, Double) -> Unit = { _, _ -> },
+    onNodeMoved: (Double, Double) -> Unit = { _, _ -> },
+) {
+    var x by remember { mutableDoubleStateOf(node.x) }
+    var y by remember { mutableDoubleStateOf(node.y) }
+
+    var expanded by remember { mutableStateOf(false) }
+
+    var alpha2dp = pixelToDp(scaleAlpha.toDouble())
+    var beta2dp = pixelToDp(scaleBeta.toDouble())
+
+    /**
+     *
+     * todo: IntOffset의 value를 node.x가 아닌 x로 설정하면 recomposition이 원활이 진행되지 않는 문제가 있다.
+     *      이걸 해결해야 노드를 움직이는 animation을 원활하게 진행할 수 있다.
+     *
+     * */
+
+    val nodeOutBoundOffset by animateIntOffsetAsState(
+        targetValue = if(!expanded) {
+            IntOffset(
+                x = node.x.toInt() - scaleAlpha.toInt(),
+                y = node.y.toInt() - scaleAlpha.toInt()
+            )
+        } else {
+            IntOffset(
+                x = node.x.toInt() - scaleBeta.toInt(),
+                y = node.y.toInt() - scaleBeta.toInt()
+            )
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "",
+    )
+
+    val nodeInBoundOffset by animateIntOffsetAsState(
+        targetValue = if(!expanded) {
+            IntOffset(
+                x = (scaleAlpha * 0.5).toInt(),
+                y = (scaleAlpha * 0.5).toInt()
+            )
+        } else {
+            IntOffset(
+                x = (scaleBeta * 0.5).toInt(),
+                y = (scaleBeta * 0.5).toInt()
+            )
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "",
+    )
+
+    Box(
+        modifier = Modifier
+            .offset { nodeOutBoundOffset }
+            .size(if (!expanded) alpha2dp * 2 else beta2dp * 2)
+            .combinedClickable(
+                onClick = {
+                    expanded = !expanded
+                    nodeClickListener(expanded)
+                },
+                onLongClick = { nodeLongClickListener() }
+            )
+            .animateContentSize()
+            .clip(CircleShape)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = {
+                        onDragStart()
+                    },
+                    onDragEnd = {
+                        /**
+                         * onDragEnd
+                         *      if ( node connecting ) nodeConnect()
+                         *      else status back
+                         * */
+                        onDragEnd(x, y)
+                        x = node.x
+                        y = node.y
+                    },
+                    onDragCancel = {
+                        x = node.x
+                        y = node.y
+                    }
+                ) { change, dragAmount ->
+                    change.consume()
+                    x += dragAmount.x
+                    y += dragAmount.y
+                    onNodeMoved(x, y)
+                }
+            }
+    ) {
+        Spacer(
+            modifier = Modifier
+                .offset { nodeInBoundOffset }
+                .size(if (!expanded) alpha2dp else beta2dp)
+                .clip(CircleShape)
+                .animateContentSize()
+                .background(color = MaterialTheme.colorScheme.onSecondary),
+        )
+    }
+}
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun drawNode(
@@ -176,6 +374,8 @@ fun drawNode(
                          *      else status back
                          * */
                         onDragEnd(x, y)
+                        x = node.x
+                        y = node.y
                     },
                     onDragCancel = {
                         x = node.x
@@ -218,6 +418,7 @@ fun drawEdge(
 
     val targetX by animateDpAsState(targetValue = pixelToDp(minX), label = "")
     val targetY by animateDpAsState(targetValue = pixelToDp(minY), label = "")
+
     val targetWidth by animateDpAsState(
         targetValue = pixelToDp(if (distanceX > thresholdSize) distanceX else thresholdSize),
         label = ""

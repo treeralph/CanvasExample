@@ -18,6 +18,7 @@ interface NodeDao {
         content: String = "",
         description: String = ""
     ): Long
+
     @Insert
     fun insertNodes(nodes: List<Node>)
     @Update

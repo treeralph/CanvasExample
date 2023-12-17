@@ -1,6 +1,7 @@
 package com.example.canvasexample
 
 import android.content.res.Resources
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp

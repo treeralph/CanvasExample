@@ -58,7 +58,6 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-tracing:1.0.0-alpha03")
 
     val room_version = "2.5.0"
-
     implementation("androidx.room:room-runtime:$room_version")
     annotationProcessor("androidx.room:room-compiler:$room_version")
     kapt("androidx.room:room-compiler:$room_version")

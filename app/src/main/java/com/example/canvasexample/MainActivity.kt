@@ -2,31 +2,13 @@ package com.example.canvasexample
 
 import android.content.res.Resources
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateOffsetAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,45 +16,24 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.canvasexample.ui.theme.CanvasExampleTheme
-import kotlin.math.max
-import kotlin.math.min
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.canvasexample.composable.MotionScaffold
 import com.example.canvasexample.composable.drawEdge
-import com.example.canvasexample.composable.drawNode
+import com.example.canvasexample.composable.drawNodeFixVersion
+import com.example.canvasexample.composable.drawNodeFixVersion2
 import com.example.canvasexample.composable.drawNotificationNode
-import com.example.canvasexample.db.Node
-import kotlinx.coroutines.launch
+import org.jetbrains.annotations.TestOnly
 
 class MainActivity : ComponentActivity() {
     private lateinit var graphViewModel: GraphViewModel
@@ -128,27 +89,69 @@ fun Graph(
                 }
         ) {
             viewModel.nodes.forEachIndexed { index, node ->
-                drawNode(
+
+                /** TEST */
+                drawNodeFixVersion2(
                     node = node,
-                    scale = scale,
                     scaleAlpha = scale * 16f,
                     scaleBeta = scale * 512f,
                     nodeClickListener = { expanded ->
                         if (expanded) viewModel.operateByZoomIn(index)
                         else viewModel.operateByZoomOut(index)
                     },
-                    onDragEnd = { x, y ->
-//                        viewModel.updateNode(id, x, y)
-//                        viewModel.addEdge(id)
+                    onDragStart = {
+                        viewModel.onNodeDragStart(node)
                     },
-                    onNodeMoved = { x, y ->
-                        viewModel.findCollisionNode(
-                            selfId = index,
-                            selfX = x,
-                            selfY = y
-                        )
+                    onDragEnd = {
+                        viewModel.onNodeDragEnd(index, node)
+                    },
+                    onNodeMoved = { offset ->
+                        viewModel.onNodeMoved(index, offset)
                     }
                 )
+
+//                drawNodeFixVersion(
+//                    node = node,
+//                    scaleAlpha = scale * 16f,
+//                    scaleBeta = scale * 512f,
+//                    nodeClickListener = { expanded ->
+//                        if (expanded) viewModel.operateByZoomIn(index)
+//                        else viewModel.operateByZoomOut(index)
+//                    },
+//                    onDragEnd = { x, y ->
+//
+//                    },
+//                    onNodeMoved = { x, y ->
+//                        viewModel.findCollisionNode(
+//                            selfId = index,
+//                            selfX = x,
+//                            selfY = y
+//                        )
+//                    }
+//                )
+                
+                
+//                drawNode(
+//                    node = node,
+//                    scale = scale,
+//                    scaleAlpha = scale * 16f,
+//                    scaleBeta = scale * 512f,
+//                    nodeClickListener = { expanded ->
+//                        if (expanded) viewModel.operateByZoomIn(index)
+//                        else viewModel.operateByZoomOut(index)
+//                    },
+//                    onDragEnd = { x, y ->
+//                        viewModel.updateNode(id, x, y)
+//                        viewModel.addEdge(id)
+//                    },
+//                    onNodeMoved = { x, y ->
+//                        viewModel.findCollisionNode(
+//                            selfId = index,
+//                            selfX = x,
+//                            selfY = y
+//                        )
+//                    }
+//                )
             }
             viewModel.edges.forEach { edge ->
                 drawEdge(
