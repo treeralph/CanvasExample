@@ -5,17 +5,17 @@ import kotlin.math.max
 import kotlin.math.sqrt
 
 class Quadtree(
-    var nodes: MutableList<Node> = mutableListOf(),
+    private var nodes: MutableList<Node> = mutableListOf(),
 ) {
     var sumMass = 0.0
     var centerX = 0.0
     var centerY = 0.0
     var size = Double.MIN_VALUE
 
-    var NWTree: Quadtree? = null
-    var NETree: Quadtree? = null
-    var SWTree: Quadtree? = null
-    var SETree: Quadtree? = null
+    private var NWTree: Quadtree? = null
+    private var NETree: Quadtree? = null
+    private var SWTree: Quadtree? = null
+    private var SETree: Quadtree? = null
 
     init {
         if(nodes.size > 0) {

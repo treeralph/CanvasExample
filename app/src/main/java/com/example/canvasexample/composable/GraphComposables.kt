@@ -74,10 +74,14 @@ fun MotionScaffold(
         if (scale < minZoom) {
             if (zoomChange > 1f) {
                 scale *= zoomChange
+            }else {
+                scale = minZoom
             }
         } else if (scale > maxZoom) {
             if (zoomChange < 1f) {
                 scale *= zoomChange
+            }else {
+                scale = maxZoom
             }
         } else {
             scale *= zoomChange
@@ -113,6 +117,91 @@ fun MotionScaffold(
                 content(scale)
             }
         }
+    }
+}
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun drawNodeFixVersion3(
+    node: Node,
+    scaleAlpha: Float,
+    scaleBeta: Float,
+    nodeClickListener: (Boolean) -> Unit = {} /** node implicit editing */,
+    nodeLongClickListener: () -> Unit = {} /** node explicit editing */,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onNodeMoved: (Offset) -> Unit = { _ -> },
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    var alpha2dp = pixelToDp(scaleAlpha.toDouble())
+    var beta2dp = pixelToDp(scaleBeta.toDouble())
+
+    val nodeOutBoundOffset by animateIntOffsetAsState(
+        targetValue = if(!expanded) {
+            IntOffset(
+                x = (node.x - scaleAlpha).toInt(),
+                y = (node.y - scaleAlpha).toInt()
+            )
+        } else {
+            IntOffset(
+                x = (node.x - scaleBeta).toInt(),
+                y = (node.y - scaleBeta).toInt()
+            )
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "",
+    )
+
+    val nodeInBoundOffset by animateIntOffsetAsState(
+        targetValue = if(!expanded) {
+            IntOffset(
+                x = (scaleAlpha * 0.5).toInt(),
+                y = (scaleAlpha * 0.5).toInt()
+            )
+        } else {
+            IntOffset(
+                x = (scaleBeta * 0.5).toInt(),
+                y = (scaleBeta * 0.5).toInt()
+            )
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "",
+    )
+
+    Box(
+        modifier = Modifier
+            .offset { nodeOutBoundOffset }
+            .size(if (!expanded) alpha2dp * 2 else beta2dp * 2)
+            .combinedClickable(
+                onClick = {
+                    expanded = !expanded
+                    nodeClickListener(expanded)
+                },
+                onLongClick = { nodeLongClickListener() }
+            )
+            //.animateContentSize()
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { onDragStart() },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragEnd() }
+                ) { change, dragAmount ->
+                    change.consume()
+                    onNodeMoved(dragAmount)
+                }
+            }
+    ) {
+        Spacer(
+            modifier = Modifier
+                .offset { nodeInBoundOffset }
+                //.size(if (!expanded) alpha2dp else beta2dp)
+                .fillMaxSize()
+                .clip(CircleShape)
+                //.animateContentSize()
+                .background(color = MaterialTheme.colorScheme.onSecondary),
+        )
     }
 }
 
@@ -459,7 +548,7 @@ fun drawEdge(
                         start = targetStart,
                         end = targetEnd,
                         alpha = 0.3f,
-                        strokeWidth = scale
+                        strokeWidth = scale * 2
                     )
                 }
                 .fillMaxSize()

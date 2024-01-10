@@ -1,18 +1,30 @@
 package com.example.canvasexample
 
-import android.content.res.Resources
-import android.util.Log
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
-import kotlin.math.min
 
 @Composable
 fun pixelToDp(px: Double): Dp {
     val density = LocalDensity.current.density.toDouble()
     return (px / density).dp
+}
+
+fun isYoutubeUrl(link: String): Boolean {
+    val pattern = "^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+"
+    return !link.isEmpty() && link.matches(pattern.toRegex())
+}
+fun openYoutubeIntent(youtubeURI: String): Intent {
+    return Intent(Intent.ACTION_VIEW).apply {
+        data = Uri.parse(youtubeURI)
+        setPackage("com.google.android.youtube")
+    }
+}
+fun openLinkIntent(link: String): Intent {
+    return Intent(Intent.ACTION_VIEW, Uri.parse(link))
 }
 
 //@Deprecated

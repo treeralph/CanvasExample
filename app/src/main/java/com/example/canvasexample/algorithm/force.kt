@@ -3,6 +3,7 @@ package com.example.canvasexample.algorithm
 import com.example.canvasexample.db.Edge
 import com.example.canvasexample.db.Node
 import kotlin.math.log
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 fun applyRepulsion(
@@ -60,10 +61,19 @@ fun applyAttraction(
 
 fun getRepulsion(coefficient: Double) = LinRepulsionAntiCollision(coefficient)
 fun getStrongGravity(coefficient: Double) = StrongGravity(coefficient)
-fun getAttraction(coefficient: Double) = LogAttractionDegreeDistributedAntiCollision(coefficient)
+fun getAttraction(
+    coefficient: Double,
+    linLogMode: Boolean,
+): AttractionForce {
+    return if(linLogMode) {
+        LogAttractionDegreeDistributedAntiCollision(coefficient)
+    }else {
+        LinAttractionDegreeDistributedAntiCollision(coefficient)
+    }
+}
 
 class LogAttractionDegreeDistributedAntiCollision(
-    var coefficient: Double
+    private var coefficient: Double
 ): AttractionForce(coefficient) {
     override fun apply(node1: Node, node2: Node, edgeWeight: Double) {
         var xDist = node1.x - node2.x
@@ -71,6 +81,23 @@ class LogAttractionDegreeDistributedAntiCollision(
         var distance = sqrt(xDist * xDist + yDist * yDist) - node1.size - node2.size
         if(distance > 0) {
             var factor = -1 * coefficient * edgeWeight * log(1 + distance, 2.0) / distance / node1.mass
+            node1.dx += xDist * factor
+            node1.dy += yDist * factor
+            node2.dx -= xDist * factor
+            node2.dy -= yDist * factor
+        }
+    }
+}
+
+class LinAttractionDegreeDistributedAntiCollision(
+    private var coefficient: Double
+): AttractionForce(coefficient) {
+    override fun apply(node1: Node, node2: Node, edgeWeight: Double) {
+        var xDist = node1.x - node2.x
+        var yDist = node1.y - node2.y
+        var distance = sqrt(xDist.pow(2) + yDist.pow(2)) - node1.size - node2.size
+        if(distance > 0) {
+            val factor = -1 * coefficient * edgeWeight / node1.mass
             node1.dx += xDist * factor
             node1.dy += yDist * factor
             node2.dx -= xDist * factor

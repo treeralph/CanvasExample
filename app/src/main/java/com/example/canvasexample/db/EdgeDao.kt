@@ -20,4 +20,6 @@ interface EdgeDao {
     fun getAllEdges(): List<Edge>
     @Query("SELECT * FROM Edge WHERE id = :id")
     fun getEdgeById(id: Long): Edge
+    @Query("DELETE FROM Edge WHERE node1=:id OR node2=:id")
+    fun deleteEdgesByNodeId(id: Long)
 }

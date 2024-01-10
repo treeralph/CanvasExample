@@ -3,6 +3,7 @@ package com.example.canvasexample.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.canvasexample.NODE_RADIUS
 
 @Entity(tableName = "Node")
 data class Node(
@@ -21,8 +22,8 @@ data class Node(
     var x: Double = 0.0,
     @ColumnInfo(defaultValue = "0.0")
     var y: Double = 0.0,
-    @ColumnInfo(defaultValue = "32.0")
-    var size: Double = 32.0,
+    @ColumnInfo(defaultValue = "${NODE_RADIUS * 2}")
+    var size: Double = NODE_RADIUS * 2,
     @ColumnInfo(defaultValue = "1.0")
     var weight: Double = 1.0,
     @ColumnInfo(defaultValue = "CURRENT_TIMESTAMP")
@@ -48,8 +49,8 @@ data class Edge(
     var node1: Long = 0,
     @ColumnInfo(defaultValue = "-1")
     var node2: Long = 0,
-    @ColumnInfo(defaultValue = "10.0")
-    var weight: Double = 10.0,
+    @ColumnInfo(defaultValue = "1.0")
+    var weight: Double = 1.0,
     @ColumnInfo(defaultValue = "CURRENT_TIMESTAMP")
     var createdTime: String = "",
 )
