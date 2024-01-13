@@ -85,7 +85,6 @@ class GraphViewModelV2(
                         operateMain()
                         Thread.sleep(10)
                     }
-                    Log.e(TAG, "draw: operateMain() op time: $temp")
                 }
             }
         }
@@ -93,6 +92,13 @@ class GraphViewModelV2(
 
     fun able2True() { _able.value = true }
     fun able2False() { _able.value = false }
+
+    fun editNode(node: Node) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _db.nodeDao().updateNodes(listOf(node))
+            _nodes[_nodeId2Index[node.id]!!] = node.copy()
+        }
+    }
 
     fun deleteNode(node: Node) {
         viewModelScope.launch(Dispatchers.IO) {
