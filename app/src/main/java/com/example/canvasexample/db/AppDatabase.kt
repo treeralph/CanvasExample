@@ -6,10 +6,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 
-@Database(entities = [Node::class, Edge::class], version = 1)
+@Database(entities = [Node::class, Edge::class, Folder::class, History::class], version = 1)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun nodeDao(): NodeDao
     abstract fun edgeDao(): EdgeDao
+    abstract fun folderDao(): FolderDao
+    abstract fun historyDao(): HistoryDao
+
     companion object {
         private var INSTANCE: AppDatabase? = null
         @Synchronized

@@ -75,7 +75,7 @@ import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MotionScaffoldInV2(
+fun MotionScaffoldInV3(
     modifier: Modifier = Modifier,
     onScale: (Float) -> Unit,
     onReadMode: Boolean,
@@ -183,8 +183,8 @@ fun MotionScaffoldInV2(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DrawNodeSelectedInV21(
-    node: Node,
+fun DrawNodeSelectedInV4(
+    node: () -> Node,
     dragAble: Boolean,
     onDragStart: () -> Unit = {},
     onDragEnd: () -> Unit = {},
@@ -195,12 +195,12 @@ fun DrawNodeSelectedInV21(
         modifier = Modifier
             .offset {
                 IntOffset(
-                    x = (node.x - NODE_RADIUS).toInt(),
-                    y = (node.y - NODE_RADIUS).toInt()
+                    x = (node().x - NODE_RADIUS).toInt(),
+                    y = (node().y - NODE_RADIUS).toInt()
                 )
             }
             .size(pixelToDp(px = NODE_RADIUS * 2))
-            .clickable { onClickListener(node) }
+            .clickable { onClickListener(node()) }
             .pointerInput(Unit) {
                 if (dragAble) {
                     detectDragGestures(
@@ -222,12 +222,12 @@ fun DrawNodeSelectedInV21(
                 .background(color = MaterialTheme.colorScheme.onSecondary),
         )
 
-        if (node.imgUri.isNotEmpty()) {
+        if (node().imgUri.isNotEmpty()) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxSize()
                     .border(BorderStroke(1.dp, Color.White)),
-                model = node.imgUri,
+                model = node().imgUri,
                 contentScale = ContentScale.Crop,
                 contentDescription = "",
                 placeholder = painterResource(id = R.drawable.ic_launcher_background)
@@ -237,7 +237,7 @@ fun DrawNodeSelectedInV21(
                 modifier = Modifier
                     .offset { IntOffset(0, (NODE_RADIUS * 2).toInt() + 8) }
                     .size(width = pixelToDp(px = NODE_RADIUS * 2), height = 8.dp),
-                text = node.content,
+                text = node().content,
                 color = Color.White,
                 maxLines = 1,
                 fontSize = 6.sp,
@@ -255,7 +255,7 @@ fun DrawNodeSelectedInV21(
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     modifier = Modifier.padding(0.dp),
-                    text = node.content,
+                    text = node().content,
                     textAlign = TextAlign.Center,
                     color = Color.Black,
                     overflow = TextOverflow.Ellipsis,
@@ -272,9 +272,8 @@ fun DrawNodeSelectedInV21(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DrawNodeSelectedInV2(
-    node: Node,
-    scale: Float = 1f,
+fun DrawNodeSelectedInV3(
+    node: () -> Node,
     dragAble: Boolean,
     onDragStart: () -> Unit = {},
     onDragEnd: () -> Unit = {},
@@ -285,12 +284,12 @@ fun DrawNodeSelectedInV2(
         modifier = Modifier
             .offset {
                 IntOffset(
-                    x = (node.x - NODE_RADIUS).toInt(),
-                    y = (node.y - NODE_RADIUS).toInt()
+                    x = (node().x - NODE_RADIUS).toInt(),
+                    y = (node().y - NODE_RADIUS).toInt()
                 )
             }
             .size(pixelToDp(px = NODE_RADIUS * 2))
-            .clickable { onClickListener(node) }
+            .clickable { onClickListener(node()) }
             .pointerInput(Unit) {
                 if (dragAble) {
                     detectDragGestures(
@@ -312,12 +311,12 @@ fun DrawNodeSelectedInV2(
                 .background(color = MaterialTheme.colorScheme.onSecondary),
         )
 
-        if (node.imgUri.isNotEmpty()) {
+        if (node().imgUri.isNotEmpty()) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxSize()
                     .border(BorderStroke(1.dp, Color.White)),
-                model = node.imgUri,
+                model = node().imgUri,
                 contentScale = ContentScale.Crop,
                 contentDescription = "",
                 placeholder = painterResource(id = R.drawable.ic_launcher_background)
@@ -327,7 +326,7 @@ fun DrawNodeSelectedInV2(
                 modifier = Modifier
                     .offset { IntOffset(0, (NODE_RADIUS * 2).toInt() + 8) }
                     .size(width = pixelToDp(px = NODE_RADIUS * 2), height = 8.dp),
-                text = node.content,
+                text = node().content,
                 color = Color.White,
                 maxLines = 1,
                 fontSize = 6.sp,
@@ -345,7 +344,7 @@ fun DrawNodeSelectedInV2(
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     modifier = Modifier.padding(0.dp),
-                    text = node.content,
+                    text = node().content,
                     textAlign = TextAlign.Center,
                     color = Color.Black,
                     overflow = TextOverflow.Ellipsis,
@@ -359,14 +358,14 @@ fun DrawNodeSelectedInV2(
 }
 
 @Composable
-fun DrawEdgeSelectedInV2(
-    start: Node,
-    end: Node,
+fun DrawEdgeSelectedInV3(
+    start: () -> Node,
+    end: () -> Node,
 ) {
-    val minX = min(start.x, end.x)
-    val maxX = max(start.x, end.x)
-    val minY = min(start.y, end.y)
-    val maxY = max(start.y, end.y)
+    val minX = min(start().x, end().x)
+    val maxX = max(start().x, end().x)
+    val minY = min(start().y, end().y)
+    val maxY = max(start().y, end().y)
 
     val distanceX = maxX - minX
     val distanceY = maxY - minY
@@ -393,12 +392,12 @@ fun DrawEdgeSelectedInV2(
                     drawLine(
                         color = Color.White,
                         start = Offset(
-                            (start.x - minX).toFloat(),
-                            (start.y - minY).toFloat()
+                            (start().x - minX).toFloat(),
+                            (start().y - minY).toFloat()
                         ),
                         end = Offset(
-                            (end.x - minX).toFloat(),
-                            (end.y - minY).toFloat()
+                            (end().x - minX).toFloat(),
+                            (end().y - minY).toFloat()
                         ),
                         alpha = STROKE_ALPHA,
                         strokeWidth = STROKE_WIDTH
@@ -410,7 +409,7 @@ fun DrawEdgeSelectedInV2(
 }
 
 @Composable
-fun drawNotificationNodeInV2(
+fun drawNotificationNodeInV3(
     node: Node,
 ) {
     var x2dp = pixelToDp(node.x)

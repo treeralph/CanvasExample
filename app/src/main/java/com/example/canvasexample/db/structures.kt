@@ -1,5 +1,7 @@
 package com.example.canvasexample.db
 
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -7,7 +9,8 @@ import com.example.canvasexample.NODE_RADIUS
 
 @Entity(tableName = "Node")
 data class Node(
-    @PrimaryKey(autoGenerate = true) var id: Long = -1,
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = -1,
     @ColumnInfo(defaultValue = "0.0")
     var dx: Double = 0.0,
     @ColumnInfo(defaultValue = "0.0")
@@ -39,12 +42,15 @@ data class Node(
     @ColumnInfo(defaultValue = "")
     var nodeInfo: String = "",
     @ColumnInfo(defaultValue = "")
-    var nodeColor: String = ""
+    var nodeColor: String = "",
+    @ColumnInfo(defaultValue = "-1")
+    var folder: Long = -1
 )
 
 @Entity(tableName = "Edge")
 data class Edge(
-    @PrimaryKey(autoGenerate = true) var id: Long = -1,
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = -1,
     @ColumnInfo(defaultValue = "-1")
     var node1: Long = 0,
     @ColumnInfo(defaultValue = "-1")
@@ -53,4 +59,26 @@ data class Edge(
     var weight: Double = 1.0,
     @ColumnInfo(defaultValue = "CURRENT_TIMESTAMP")
     var createdTime: String = "",
+    @ColumnInfo(defaultValue = "-1")
+    var folder: Long = -1
+)
+
+@Entity(tableName = "Folder")
+data class Folder(
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = -1,
+    @ColumnInfo(defaultValue = "")
+    var folderName: String = "",
+    @ColumnInfo(defaultValue = "")
+    var folderInfo: String = "",
+    @ColumnInfo(defaultValue = "CURRENT_TIMESTAMP")
+    var createdTime: String = ""
+)
+
+@Entity(tableName = "History")
+data class History(
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = -1,
+    @ColumnInfo(defaultValue = "-1")
+    var latestFolder: Long = -1
 )

@@ -1,0 +1,37 @@
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun GraphLab(
+  viewModel: GraphViewModelV2
+  stable move2Link: Function1<String, Unit>
+  stable currentUri: MutableState<String>
+  stable onEditImageClickListener: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun GraphLabV3(
+  viewModel: GraphViewModelV3
+  stable move2Link: Function1<String, Unit>
+  stable currentUri: MutableState<String>
+  stable onEditImageClickListener: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun AddNodeDialog(
+  stable text: String? = @dynamic LiveLiterals$MainActivityKt.String$param-text$fun-AddNodeDialog()
+  stable onTextChange: Function1<String, Unit>? = @static { it: String ->
+
+}
+
+  stable onConfirmClicked: Function1<String, Unit>? = @static { <anonymous parameter 0>: String ->
+
+}
+
+  stable onDismissClicked: Function0<Unit>? = @static {
+
+}
+
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun NodeDetailDialog(
+  node: Node? = @dynamic testNode
+  stable onDismissClicked: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun NodeDetailDialog2(
+  unused node: Node? = @dynamic testNode
+  stable onDismissClicked: Function0<Unit>
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun NodeDetailPreview()
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun NodeDetailPreview2()

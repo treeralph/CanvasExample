@@ -2,8 +2,9 @@ package com.example.canvasexample
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -22,15 +23,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import okhttp3.Dispatcher
-import org.jetbrains.annotations.TestOnly
 import org.jsoup.Jsoup
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
-import kotlin.system.measureTimeMillis
 
-class GraphViewModelV2(
+class GraphViewModelV3(
     application: Application,
 ) : ViewModel() {
 
@@ -56,17 +54,17 @@ class GraphViewModelV2(
     private val _currentFolderId = MutableLiveData<Long>(-1)
     val currentFolderId: MutableLiveData<Long> = _currentFolderId
 
-    private val _nodes = mutableStateListOf<Node>()
-    private val _nodesTemper = mutableStateListOf<Node>()
-    private val _edges = mutableStateListOf<Edge>()
-    private val _edgesTemper = mutableStateListOf<Edge>()
-    private val _notificationNodes = mutableStateListOf<Node>()
+    private val _nodes = mutableListOf<MutableState<Node>>()
+    private val _edges = mutableListOf<MutableState<Edge>>()
+    private val _notificationNodes = mutableListOf<MutableState<Node>>()
+
+    val nodes: List<MutableState<Node>> = _nodes
+    val edges: List<MutableState<Edge>> = _edges
+    val notificationNodes: List<MutableState<Node>> = _notificationNodes
+
     private val _nodeId2Index = mutableMapOf<Long, Int>()
     private val _folders = mutableStateListOf<Folder>()
 
-    val nodes: MutableList<Node> = _nodesTemper
-    val edges: MutableList<Edge> = _edgesTemper
-    val notificationNodes: MutableList<Node> = _notificationNodes
     val nodeId2Index: Map<Long, Int> = _nodeId2Index
     val folders: MutableList<Folder> = _folders
 
@@ -102,8 +100,9 @@ class GraphViewModelV2(
             val latestId = _historyDao.getAllHistories()[0].id
             _currentFolder = _folderDao.getFolderById(latestId)
             _currentFolderId.postValue(latestId)
-            updateElements(_currentFolder)
-            // draw()
+            updateElements(_currentFolder, init = true)
+
+            draw()
         }
     }
 
@@ -122,28 +121,26 @@ class GraphViewModelV2(
     fun opDisable() {
         if (_able.value!!) _able.value = false
     }
-    fun updateElements(folder: Folder) {
-        if (_currentFolderId.value != folder.id) {
+
+    fun updateElements(folder: Folder, init: Boolean = false) {
+        if (_currentFolderId.value != folder.id || init) {
             _currentFolder = folder
             _currentFolderId.postValue(folder.id)
             viewModelScope.launch(Dispatchers.IO) {
                 _mutex.withLock {
                     _nodes.clear()
                     _edges.clear()
-                    _nodesTemper.clear()
-                    _edgesTemper.clear()
                     _nodeId2Index.clear()
 
                     val data1 = _nodeDao.getNodesByFolder(folder.id)
                     val data2 = _edgeDao.getEdgesByFolder(folder.id)
 
                     // visualSizeOfNodes(data1) /* TEST */
-
-                    _nodes.addAll(data1)
-                    _nodes.forEachIndexed { index, node -> _nodeId2Index[node.id] = index }
-                    _nodesTemper.addAll(data1)
-                    _edges.addAll(data2)
-                    _edgesTemper.addAll(data2)
+                    data1.forEach { node -> _nodes.add(mutableStateOf(node)) }
+                    _nodes.forEachIndexed { index, nodeState ->
+                        _nodeId2Index[nodeState.value.id] = index
+                    }
+                    data2.forEach { edge -> _edges.add(mutableStateOf(edge)) }
                 }
             }
         }
@@ -177,7 +174,7 @@ class GraphViewModelV2(
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
                 _db.nodeDao().updateNodes(listOf(node))
-                _nodes[_nodeId2Index[node.id]!!] = node.copy()
+                _nodes[_nodeId2Index[node.id]!!].value = node.copy()
             }
         }
     }
@@ -185,33 +182,23 @@ class GraphViewModelV2(
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
                 _db.runInTransaction {
-                    /** delete edge & node ( including _edges, _nodes, _nodeId2Index ) */
                     val targetIndex = _nodes.size - 1
                     _db.nodeDao().deleteNodes(listOf(node))
                     _db.edgeDao().deleteEdgesByNodeId(node.id)
                     swapNode(_nodeId2Index[node.id]!!, targetIndex) // send target node to list tail
-                    _edges.removeIf { it.node1 == node.id || it.node2 == node.id }
-                    _edgesTemper.removeIf { it.node1 == node.id || it.node2 == node.id }
+                    _edges.removeIf { it.value.node1 == node.id || it.value.node2 == node.id }
                     _nodes.removeAt(targetIndex)
-                    _nodesTemper.removeAt(targetIndex)
                     _nodeId2Index.remove(node.id)
-
-                    Log.i(TAG, "deleteNode: _nodes size: ${_nodes.size}")
-                    Log.i(TAG, "deleteNode: _nodesTemper size: ${_nodesTemper.size}")
                 }
             }
         }
     }
     private fun swapNode(index1: Int, index2: Int) {
-        val temp1 = _nodes[index1].copy()
-        val temp2 = _nodes[index2].copy()
-        val temp3 = _nodesTemper[index1].copy()
-        val temp4 = _nodesTemper[index2].copy()
+        val temp1 = _nodes[index1].value.copy()
+        val temp2 = _nodes[index2].value.copy()
 
-        _nodes[index1] = temp2
-        _nodes[index2] = temp1
-        _nodesTemper[index1] = temp4
-        _nodesTemper[index2] = temp3
+        _nodes[index1].value = temp2
+        _nodes[index2].value = temp1
         _nodeId2Index[temp1.id] = index2
         _nodeId2Index[temp2.id] = index1
     }
@@ -229,8 +216,7 @@ class GraphViewModelV2(
             )
             val node = _nodeDao.getNodeById(id)
             Log.e(TAG, "addNode: $node")
-            _nodes.add(node.copy())
-            _nodesTemper.add(node.copy())
+            _nodes.add(mutableStateOf(node.copy()))
             _nodeId2Index[id] = _nodes.size - 1
             Log.e(TAG, "addNode: In runInTransaction")
         }
@@ -253,8 +239,8 @@ class GraphViewModelV2(
         selfY: Double,
     ) {
         var targetId: Int = -1
-        _nodes.forEachIndexed { index, node ->
-            if (isCollision(node.x, node.y, selfX, selfY)) {
+        _nodes.forEachIndexed { index, nodeState ->
+            if (isCollision(nodeState.value.x, nodeState.value.y, selfX, selfY)) {
                 if (index != selfId) {
                     targetId = index
                 }
@@ -264,9 +250,10 @@ class GraphViewModelV2(
             _notificationNodes.clear()
         } else {
             _notificationNodes.clear()
-            _notificationNodes.add(_nodes[targetId].copy())
+            _notificationNodes.add(
+                mutableStateOf(_nodes[targetId].value.copy())
+            )
         }
-        Log.e(TAG, "findCollisionNode: ${_notificationNodes.size}")
     }
 
     private fun operateMain() {
@@ -280,8 +267,8 @@ class GraphViewModelV2(
             var fx = 0.0
             var fy = 0.0
             for (j in 0 until _nodes.size) {
-                val distX = (_nodes[i].x + _nodes[i].size / 2) - (_nodes[j].x + _nodes[i].size / 2)
-                val distY = (_nodes[i].y + _nodes[i].size / 2) - (_nodes[j].y + _nodes[i].size / 2)
+                val distX = (_nodes[i].value.x + _nodes[i].value.size / 2) - (_nodes[j].value.x + _nodes[i].value.size / 2)
+                val distY = (_nodes[i].value.y + _nodes[i].value.size / 2) - (_nodes[j].value.y + _nodes[i].value.size / 2)
                 var rsq = distX * distX + distY * distY
                 val rsqRound = rsq.toInt() * 100
                 rsq = (rsqRound / 100).toDouble()
@@ -299,20 +286,20 @@ class GraphViewModelV2(
                 }
             }
 
-            val distXC = -1 * (_nodes[i].x + _nodes[i].size / 2)
-            val distYC = -1 * (_nodes[i].y + _nodes[i].size / 2)
+            val distXC = -1 * (_nodes[i].value.x + _nodes[i].value.size / 2)
+            val distYC = -1 * (_nodes[i].value.y + _nodes[i].value.size / 2)
             fx += GRAVITY * distXC
             fy += GRAVITY * distYC
 
             for (j in 0 until _edges.size) {
                 var distX = 0.0
                 var distY = 0.0
-                if (i == _nodeId2Index[_edges[j].node1]) {
-                    distX = _nodes[_nodeId2Index[_edges[j].node2]!!].x - _nodes[i].x
-                    distY = _nodes[_nodeId2Index[_edges[j].node2]!!].y - _nodes[i].y
-                } else if (i == _nodeId2Index[_edges[j].node2]) {
-                    distX = _nodes[_nodeId2Index[_edges[j].node1]!!].x - _nodes[i].x
-                    distY = _nodes[_nodeId2Index[_edges[j].node1]!!].y - _nodes[i].y
+                if (i == _nodeId2Index[_edges[j].value.node1]) {
+                    distX = _nodes[_nodeId2Index[_edges[j].value.node2]!!].value.x - _nodes[i].value.x
+                    distY = _nodes[_nodeId2Index[_edges[j].value.node2]!!].value.y - _nodes[i].value.y
+                } else if (i == _nodeId2Index[_edges[j].value.node2]) {
+                    distX = _nodes[_nodeId2Index[_edges[j].value.node1]!!].value.x - _nodes[i].value.x
+                    distY = _nodes[_nodeId2Index[_edges[j].value.node1]!!].value.y - _nodes[i].value.y
                 }
 
                 fx += BOUNCE * distX
@@ -322,13 +309,13 @@ class GraphViewModelV2(
                 if (_onMovedNode.isNotEmpty() && _nodeId2Index[_onMovedNode[0].id] == i) continue
             } catch (e: Exception) { }
 
-            _nodes[i].dx = (_nodes[i].dx + fx) * ATTENUATION
-            _nodes[i].dy = (_nodes[i].dy + fy) * ATTENUATION
+            _nodes[i].value.dx = (_nodes[i].value.dx + fx) * ATTENUATION
+            _nodes[i].value.dy = (_nodes[i].value.dy + fy) * ATTENUATION
 
-            _nodes[i].x += nodes[i].dx
-            _nodes[i].y += nodes[i].dy
+            _nodes[i].value.x += _nodes[i].value.dx
+            _nodes[i].value.y += _nodes[i].value.dy
 
-            _nodesTemper[i] = _nodes[i].copy()
+            _nodes[i].value = _nodes[i].value.copy()
         }
     }
 
@@ -407,8 +394,8 @@ class GraphViewModelV2(
         viewModelScope.launch(Dispatchers.IO) {
             val nodeSavable: MutableList<Node> = mutableListOf()
             val edgeSavable: MutableList<Edge> = mutableListOf()
-            _nodes.forEach { node -> nodeSavable.add(node) }
-            _edges.forEach { edge -> edgeSavable.add(edge) }
+            _nodes.forEach { nodeState -> nodeSavable.add(nodeState.value) }
+            _edges.forEach { edgeState -> edgeSavable.add(edgeState.value) }
             _nodeDao.updateNodes(nodeSavable)
             _edgeDao.updateEdges(edgeSavable)
 
@@ -441,15 +428,13 @@ class GraphViewModelV2(
             _mutex.withLock {
                 run a@ {
                     if (_notificationNodes.size != 1) {
-                        _nodes[index] = _nodesTemper[index].copy()
                         _onMovedNode.clear()
                         _notificationNodes.clear()
                         return@a
                     }
 
-                    addEdge(node.id, _notificationNodes[0].id)?.let { currentEdge ->
-                        _edges.add(currentEdge)
-                        _edgesTemper.add(currentEdge)
+                    addEdge(node.id, _notificationNodes[0].value.id)?.let { currentEdge ->
+                        _edges.add(mutableStateOf(currentEdge))
                         _onMovedNode.clear()
                         _notificationNodes.clear()
                     }
@@ -459,11 +444,10 @@ class GraphViewModelV2(
     }
 
     fun onNodeMoved(index: Int, offset: Offset) {
-        val target = _nodesTemper[index]
+        val target = _nodes[index].value
         val x = target.x + offset.x
         val y = target.y + offset.y
-        _nodesTemper[index] = _nodesTemper[index].copy(x = x, y = y)
-        // _nodes[index] = _nodesTemper[index].copy() // anti collision
+        _nodes[index].value = _nodes[index].value.copy(x = x, y = y)
         findCollisionNode(index, x, y)
     }
 
@@ -473,8 +457,8 @@ class GraphViewModelV2(
     private fun addEdge(node1: Long, node2: Long): Edge? {
         if(_edgeDao.isEdge(node1, node2).isEmpty()) {
             val edgeId = _edgeDao.insertEdge(node1, node2, _currentFolderId.value ?: -1)
-            _nodes[_nodeId2Index[node1]!!].mass += 1
-            _nodes[_nodeId2Index[node2]!!].mass += 1
+            _nodes[_nodeId2Index[node1]!!].value.mass += 1
+            _nodes[_nodeId2Index[node2]!!].value.mass += 1
             return _edgeDao.getEdgeById(edgeId)
         }
         return null
