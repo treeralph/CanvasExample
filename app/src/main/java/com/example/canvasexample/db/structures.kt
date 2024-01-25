@@ -7,6 +7,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.canvasexample.NODE_RADIUS
 
+@Immutable
 @Entity(tableName = "Node")
 data class Node(
     @PrimaryKey(autoGenerate = true)
@@ -45,8 +46,22 @@ data class Node(
     var nodeColor: String = "",
     @ColumnInfo(defaultValue = "-1")
     var folder: Long = -1
-)
+) {
+//    fun setX(x: Double) {
+//        this.x = x
+//    }
+//    fun setY(y: Double) {
+//        this.y = y
+//    }
+//    fun setDx(dx: Double) {
+//        this.dx = dx
+//    }
+//    fun setDy(dy: Double) {
+//        this.dy = dy
+//    }
+}
 
+@Immutable
 @Entity(tableName = "Edge")
 data class Edge(
     @PrimaryKey(autoGenerate = true)

@@ -173,6 +173,7 @@ class GraphViewModelV2(
             _folders.add(newFolder)
         }
     }
+
     fun editNode(node: Node) {
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {

@@ -1,6 +1,0 @@
-unstable class MainActivity {
-  runtime var graphViewModel: GraphViewModelV2
-  stable var currentUri: MutableState<String>
-  unstable val imageLoadLauncher: ActivityResultLauncher<@[FlexibleNullability] String?>
-  <runtime stability> = Unstable
-}
