@@ -167,6 +167,11 @@ class MainActivity : ComponentActivity() {
         graphViewModel.draw()
     }
 
+    override fun onPause() {
+        super.onPause()
+        /* TODO: Stop drawing */
+    }
+
     override fun onStop() {
         super.onStop()
         graphViewModel.saveData()
@@ -218,7 +223,7 @@ fun GraphLabNDK(
                 }
         ) {
             viewModel.edgeStates.forEach { edgeState ->
-                key(edgeState.value.id) {
+                key(edgeState.value.id * -1) {
                     DrawEdgeSelectedNDK(
                         start = { viewModel.getNode(edgeState.value.node1) },
                         end = { viewModel.getNode(edgeState.value.node2) }

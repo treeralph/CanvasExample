@@ -278,13 +278,6 @@ fun DrawEdgeSelectedNDK(
     start: () -> Node,
     end: () -> Node,
 ) {
-    val minX = min(start().x, end().x)
-    val maxX = max(start().x, end().x)
-    val minY = min(start().y, end().y)
-    val maxY = max(start().y, end().y)
-
-    val distanceX = maxX - minX
-    val distanceY = maxY - minY
     Box(
         modifier = Modifier
             .offset {
@@ -294,14 +287,19 @@ fun DrawEdgeSelectedNDK(
                 )
             }
             .size(
-                width = pixelToDp(
-                    if (distanceX > STROKE_BOX_SIZE_THRESHOLD) maxX - minX
-                    else STROKE_BOX_SIZE_THRESHOLD
-                ),
-                height = pixelToDp(
-                    if (distanceY > STROKE_BOX_SIZE_THRESHOLD) maxY - minY
-                    else STROKE_BOX_SIZE_THRESHOLD
-                )
+                width = 1.dp
+//                pixelToDp(
+//                    if (max(start().x, end().x) - min(start().x, end().x) > STROKE_BOX_SIZE_THRESHOLD) {
+//                        max(start().x, end().x) - min(start().x, end().x)
+//                    } else STROKE_BOX_SIZE_THRESHOLD
+//                )
+                ,
+                height = 1.dp
+//                pixelToDp(
+//                    if (max(start().y, end().y) - min(start().y, end().y) > STROKE_BOX_SIZE_THRESHOLD) {
+//                        max(start().y, end().y) - min(start().y, end().y)
+//                    } else STROKE_BOX_SIZE_THRESHOLD
+//                )
             )
     ) {
         Spacer(
@@ -310,12 +308,12 @@ fun DrawEdgeSelectedNDK(
                     drawLine(
                         color = Color.White,
                         start = Offset(
-                            (start().x - minX).toFloat(),
-                            (start().y - minY).toFloat()
+                            (start().x - min(start().x, end().x)).toFloat(),
+                            (start().y - min(start().y, end().y)).toFloat()
                         ),
                         end = Offset(
-                            (end().x - minX).toFloat(),
-                            (end().y - minY).toFloat()
+                            (end().x - min(start().x, end().x)).toFloat(),
+                            (end().y - min(start().y, end().y)).toFloat()
                         ),
                         alpha = STROKE_ALPHA,
                         strokeWidth = STROKE_WIDTH
@@ -395,9 +393,9 @@ fun drawNotificationNodeNDK(
                 IntOffset(
                     x = (node().x - NODE_RADIUS).toInt(),
                     y = (node().y - NODE_RADIUS).toInt()
-                ) - IntOffset(60, 60)
+                ) - IntOffset(100, 100)
             }
-            .size(pixelToDp(px = (NODE_RADIUS + 60) * 2))
+            .size(pixelToDp(px = (NODE_RADIUS + 100) * 2))
             .alpha(0.3f)
             .drawBehind {
                 drawCircle(color = Pink40)
