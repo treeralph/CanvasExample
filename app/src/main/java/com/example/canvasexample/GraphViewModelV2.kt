@@ -333,6 +333,8 @@ class GraphViewModelV2(
         }
     }
 
+    /* TODO compare operateNDK, operateMain value */
+
     private fun linkParserV2(link: String): LinkCapsule {
         var result = LinkCapsule()
         if (link.isNotEmpty()) {

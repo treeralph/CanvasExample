@@ -1,5 +1,6 @@
 package com.example.canvasexample.composable
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -235,7 +236,7 @@ fun DrawNodeSelectedNDK(
                 model = imageUri,
                 contentScale = ContentScale.Crop,
                 contentDescription = "",
-                placeholder = painterResource(id = R.drawable.ic_launcher_background)
+                placeholder = painterResource(id = R.drawable.ic_launcher_background),
             )
 
             Text(

@@ -2,6 +2,7 @@ package com.example.canvasexample
 
 import android.app.Application
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
@@ -108,6 +109,9 @@ class GraphViewModelNDK(application: Application): ViewModel() {
         if (_able.value!!) _able.value = false
     }
 
+    fun mutexAcquire() = viewModelScope.launch(Dispatchers.IO) { _mutex.lock() }
+    fun mutexRelease() = viewModelScope.launch(Dispatchers.IO) { _mutex.unlock() }
+
     fun draw() {
         viewModelScope.launch(Dispatchers.IO) {
             while(true) {
@@ -118,17 +122,21 @@ class GraphViewModelNDK(application: Application): ViewModel() {
                             edges = _edgesNDK,
                             nodeId2Index = _nodeId2Index
                         )
-                        _nodesNDK.forEachIndexed { index, node ->
-                            if(_onMovedNode.isEmpty() || _nodeId2Index[_onMovedNode[0].id] != index) {
-                                _nodeStates[index].value = node.copy()
+                        viewModelScope.launch(Dispatchers.Main) {
+                            _nodesNDK.forEachIndexed { index, node ->
+                                if (_onMovedNode.isEmpty() || _nodeId2Index[_onMovedNode[0].id] != index) {
+                                    _nodeStates[index].value = node.copy()
+                                }
                             }
                         }
                     }
                 } else 0
+                Log.e(TAG, "draw: opTime: $opTime")
                 if(opTime < 20) Thread.sleep(20 - opTime)
             }
         }
     }
+
     /**
      * History 통해서 폴더를 제어 하려고 하지 말고 참고 정도로 쓰자.
      * History check 후에 Folder 를 가져 온 후에 있으면 만들고 없으면 제일 위에 꺼.
@@ -281,7 +289,7 @@ class GraphViewModelNDK(application: Application): ViewModel() {
     fun addNode(link: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
-                val capsule = try{
+                val capsule = try {
                     linkParserV2(link)
                 } catch(e: IllegalArgumentException) {
                     LinkCapsule(title = link)
@@ -345,31 +353,33 @@ class GraphViewModelNDK(application: Application): ViewModel() {
     private val _onMovedNode = mutableStateListOf<Node>()
 
     fun onNodeDragStart(node: Node) {
-        if (_onMovedNode.size != 0) {
-            _onMovedNode.clear()
+        viewModelScope.launch(Dispatchers.IO) {
+            _mutex.lock()
+            if (_onMovedNode.size != 0) {
+                _onMovedNode.clear()
+            }
+            _onMovedNode.add(node.copy())
         }
-        _onMovedNode.add(node.copy())
     }
 
     fun onNodeDragEnd(index: Int, node: Node) {
         viewModelScope.launch(Dispatchers.IO) {
-            _mutex.withLock {
-                run a@ {
-                    if (_notificationNodes.size != 1) {
-                        _nodesNDK[index] = _nodeStates[index].value.copy()
-                        _onMovedNode.clear()
-                        _notificationNodes.clear()
-                        return@a
-                    }
+            run a@ {
+                if (_notificationNodes.size != 1) {
+                    _nodesNDK[index] = _nodeStates[index].value.copy()
+                    _onMovedNode.clear()
+                    _notificationNodes.clear()
+                    return@a
+                }
 
-                    addEdge(node.id, _notificationNodes[0].value.id)?.let { currentEdge ->
-                        _edgesNDK.add(currentEdge)
-                        _edgeStates.add(mutableStateOf(currentEdge.copy()))
-                        _onMovedNode.clear()
-                        _notificationNodes.clear()
-                    }
+                addEdge(node.id, _notificationNodes[0].value.id)?.let { currentEdge ->
+                    _edgesNDK.add(currentEdge)
+                    _edgeStates.add(mutableStateOf(currentEdge.copy()))
+                    _onMovedNode.clear()
+                    _notificationNodes.clear()
                 }
             }
+            _mutex.unlock()
         }
     }
 
