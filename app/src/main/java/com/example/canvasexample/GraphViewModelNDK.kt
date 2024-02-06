@@ -2,7 +2,6 @@ package com.example.canvasexample
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
@@ -12,7 +11,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.withTransaction
 import com.example.canvasexample.db.AppDatabase
 import com.example.canvasexample.db.Edge
 import com.example.canvasexample.db.EdgeDao
@@ -22,6 +20,7 @@ import com.example.canvasexample.db.HistoryDao
 import com.example.canvasexample.db.Node
 import com.example.canvasexample.db.NodeDao
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -71,6 +70,8 @@ class GraphViewModelNDK(application: Application): ViewModel() {
     private val _able = MutableLiveData(true)
     val able: LiveData<Boolean> = _able
 
+    var sharedSheet = ""
+
     init {
         Log.e(TAG, "init...")
         _db = AppDatabase.getInstance(application)!!
@@ -114,13 +115,13 @@ class GraphViewModelNDK(application: Application): ViewModel() {
 
     fun draw() {
         viewModelScope.launch(Dispatchers.IO) {
-            while(true) {
+            while(_able.value!!) {
                 val opTime = if(_able.value!!) measureTimeMillis {
                     _mutex.withLock {
                         operateMainNDK(
                             nodes = _nodesNDK,
                             edges = _edgesNDK,
-                            nodeId2Index = _nodeId2Index
+                            nodeId2Index = _nodeId2Index,
                         )
                         viewModelScope.launch(Dispatchers.Main) {
                             _nodesNDK.forEachIndexed { index, node ->
@@ -222,13 +223,40 @@ class GraphViewModelNDK(application: Application): ViewModel() {
         }
     }
 
-    fun editNode(node: Node) {
+    fun editNodePrevious(node: Node) {
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
                 _db.nodeDao().updateNodes(listOf(node))
                 val tempIndex = _nodeId2Index[node.id]!!
                 _nodesNDK[tempIndex] = node.copy()
                 _nodeStates[tempIndex].value = node.copy()
+            }
+        }
+    }
+
+    fun editNode(node: Node) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _mutex.withLock {
+                _db.nodeDao().updateNodes(listOf(node))
+                swapNode(_nodeId2Index[node.id]!!, _nodesNDK.size - 1)
+                _nodesNDK.removeAt(_nodesNDK.size - 1)
+                _nodeStates.removeAt(_nodesNDK.size - 1)
+                _nodesNDK.add(node)
+                _nodeStates.add(mutableStateOf(node))
+            }
+            deleteNode(node)
+            _mutex.withLock {
+                val id = _nodeDao.insertNode(
+                    x = node.x,
+                    y = node.y,
+                    imgUri = node.imgUri,
+                    linkUrl = node.linkUrl,
+                    content = node.content,
+                    description = node.description,
+                    folder = _currentFolderId.value ?: -1
+                )
+                val node = _nodeDao.getNodeById(id)
+
             }
         }
     }
@@ -433,6 +461,6 @@ class GraphViewModelNDK(application: Application): ViewModel() {
     private external suspend fun operateMainNDK(
         nodes: ArrayList<Node>,
         edges: ArrayList<Edge>,
-        nodeId2Index: HashMap<Long, Int>
+        nodeId2Index: HashMap<Long, Int>,
     )
 }

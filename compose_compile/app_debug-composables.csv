@@ -1,4 +1,4 @@
 package,name,composable,skippable,restartable,readonly,inline,isLambda,hasDefaults,defaultsGroup,groups,calls,
-com.example.canvasexample.GraphLabNDK,GraphLabNDK,1,1,1,0,0,0,0,0,1,15,
+com.example.canvasexample.GraphLabNDK,GraphLabNDK,1,1,1,0,0,0,0,0,1,17,
 com.example.canvasexample.AddNodeDialog,AddNodeDialog,1,1,1,0,0,0,1,0,2,1,
 com.example.canvasexample.NodeDetailPreview,NodeDetailPreview,1,1,1,0,0,0,0,0,1,1,

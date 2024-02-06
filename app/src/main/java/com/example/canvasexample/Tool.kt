@@ -3,10 +3,12 @@ package com.example.canvasexample
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+@Stable
 @Composable
 fun pixelToDp(px: Double): Dp {
     val density = LocalDensity.current.density.toDouble()

@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
@@ -39,6 +40,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -193,10 +197,6 @@ fun DrawNodeSelectedNDK(
     onNodeMoved: (Offset) -> Unit = { _ -> },
     onClickListener: (Node) -> Unit,
 ) {
-    var isImage by remember { mutableStateOf(node().imgUri.isNotEmpty()) }
-    var imageUri by remember { mutableStateOf(node().imgUri) }
-    var textContent by remember { mutableStateOf(node().content) }
-
     Box(
         modifier = Modifier
             .offset {
@@ -228,12 +228,13 @@ fun DrawNodeSelectedNDK(
                 .background(color = MaterialTheme.colorScheme.onSecondary),
         )
 
-        if (isImage) {
+        if (node().imgUri.isNotEmpty()) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(color = Color.White)
                     .border(BorderStroke(1.dp, Color.White)),
-                model = imageUri,
+                model = node().imgUri,
                 contentScale = ContentScale.Crop,
                 contentDescription = "",
                 placeholder = painterResource(id = R.drawable.ic_launcher_background),
@@ -243,7 +244,7 @@ fun DrawNodeSelectedNDK(
                 modifier = Modifier
                     .offset { IntOffset(0, (NODE_RADIUS * 2).toInt() + 8) }
                     .size(width = pixelToDp(px = NODE_RADIUS * 2), height = 8.dp),
-                text = textContent,
+                text = node().content,
                 color = Color.White,
                 maxLines = 1,
                 fontSize = 6.sp,
@@ -261,7 +262,192 @@ fun DrawNodeSelectedNDK(
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     modifier = Modifier.padding(0.dp),
-                    text = textContent,
+                    text = node().content,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2,
+                    softWrap = true
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DrawNodeSelectedNDKV2(
+    node: () -> Node,
+    dragAble: Boolean,
+    onValueChanged: () -> Unit = {},
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onNodeMoved: (Offset) -> Unit = { _ -> },
+    onClickListener: (Node) -> Unit,
+) {
+    var image by remember { mutableStateOf(node().imgUri) }
+    var content by remember { mutableStateOf(node().content) }
+
+    SideEffect {
+
+    }
+    Box(
+        modifier = Modifier
+            .offset {
+                IntOffset(
+                    x = (node().x - NODE_RADIUS).toInt(),
+                    y = (node().y - NODE_RADIUS).toInt()
+                )
+            }
+            .size(pixelToDp(px = NODE_RADIUS * 2))
+            .clickable { onClickListener(node()) }
+            .pointerInput(Unit) {
+                if (dragAble) {
+                    detectDragGestures(
+                        onDragStart = { onDragStart() },
+                        onDragEnd = { onDragEnd() },
+                        onDragCancel = { onDragEnd() }
+                    ) { change, dragAmount ->
+                        change.consume()
+                        onNodeMoved(dragAmount)
+                    }
+                }
+            }
+    ) {
+        Spacer(
+            modifier = Modifier
+                .offset { IntOffset((NODE_RADIUS / 2).toInt(), (NODE_RADIUS / 2).toInt()) }
+                .size(pixelToDp(px = NODE_RADIUS))
+                .clip(CircleShape)
+                .background(color = MaterialTheme.colorScheme.onSecondary),
+        )
+
+        if (image.isNotEmpty()) {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.White)
+                    .border(BorderStroke(1.dp, Color.White)),
+                model = image,
+                contentScale = ContentScale.Crop,
+                contentDescription = "",
+                placeholder = painterResource(id = R.drawable.ic_launcher_background),
+            )
+
+            Text(
+                modifier = Modifier
+                    .offset { IntOffset(0, (NODE_RADIUS * 2).toInt() + 8) }
+                    .size(width = pixelToDp(px = NODE_RADIUS * 2), height = 8.dp),
+                text = content,
+                color = Color.White,
+                maxLines = 1,
+                fontSize = 6.sp,
+                textAlign = TextAlign.Center,
+                overflow = TextOverflow.Ellipsis
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.secondaryContainer)
+                    .border(BorderStroke(1.dp, Color.White)),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    modifier = Modifier.padding(0.dp),
+                    text = content,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2,
+                    softWrap = true
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DrawNodeSelectedNDKV3(
+    node: () -> Node,
+    imgUri: () -> String,
+    content: () -> String,
+    dragAble: Boolean,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onNodeMoved: (Offset) -> Unit = { _ -> },
+    onClickListener: (Node) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .offset {
+                IntOffset(
+                    x = (node().x - NODE_RADIUS).toInt(),
+                    y = (node().y - NODE_RADIUS).toInt()
+                )
+            }
+            .size(pixelToDp(px = NODE_RADIUS * 2))
+            .clickable { onClickListener(node()) }
+            .pointerInput(Unit) {
+                if (dragAble) {
+                    detectDragGestures(
+                        onDragStart = { onDragStart() },
+                        onDragEnd = { onDragEnd() },
+                        onDragCancel = { onDragEnd() }
+                    ) { change, dragAmount ->
+                        change.consume()
+                        onNodeMoved(dragAmount)
+                    }
+                }
+            }
+    ) {
+        Spacer(
+            modifier = Modifier
+                .offset { IntOffset((NODE_RADIUS / 2).toInt(), (NODE_RADIUS / 2).toInt()) }
+                .size(pixelToDp(px = NODE_RADIUS))
+                .clip(CircleShape)
+                .background(color = MaterialTheme.colorScheme.onSecondary),
+        )
+
+        if (imgUri().isNotEmpty()) {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.White)
+                    .border(BorderStroke(1.dp, Color.White)),
+                model = imgUri(),
+                contentScale = ContentScale.Crop,
+                contentDescription = "",
+                placeholder = painterResource(id = R.drawable.ic_launcher_background),
+            )
+
+            Text(
+                modifier = Modifier
+                    .offset { IntOffset(0, (NODE_RADIUS * 2).toInt() + 8) }
+                    .size(width = pixelToDp(px = NODE_RADIUS * 2), height = 8.dp),
+                text = content(),
+                color = Color.White,
+                maxLines = 1,
+                fontSize = 6.sp,
+                textAlign = TextAlign.Center,
+                overflow = TextOverflow.Ellipsis
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.onPrimary)
+                    .border(BorderStroke(1.dp, Color.White)),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    modifier = Modifier.padding(0.dp),
+                    text = content(),
                     textAlign = TextAlign.Center,
                     color = Color.Black,
                     overflow = TextOverflow.Ellipsis,
@@ -287,21 +473,7 @@ fun DrawEdgeSelectedNDK(
                     y = min(start().y, end().y).toInt()
                 )
             }
-            .size(
-                width = 1.dp
-//                pixelToDp(
-//                    if (max(start().x, end().x) - min(start().x, end().x) > STROKE_BOX_SIZE_THRESHOLD) {
-//                        max(start().x, end().x) - min(start().x, end().x)
-//                    } else STROKE_BOX_SIZE_THRESHOLD
-//                )
-                ,
-                height = 1.dp
-//                pixelToDp(
-//                    if (max(start().y, end().y) - min(start().y, end().y) > STROKE_BOX_SIZE_THRESHOLD) {
-//                        max(start().y, end().y) - min(start().y, end().y)
-//                    } else STROKE_BOX_SIZE_THRESHOLD
-//                )
-            )
+            .size(width = 1.dp, height = 1.dp)
     ) {
         Spacer(
             modifier = Modifier

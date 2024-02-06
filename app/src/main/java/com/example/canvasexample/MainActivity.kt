@@ -7,9 +7,15 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,13 +37,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
@@ -46,20 +50,19 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.livedata.observeAsState
@@ -69,26 +72,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.canvasexample.ui.theme.CanvasExampleTheme
-import com.example.canvasexample.composable.MotionScaffoldInV2
-import com.example.canvasexample.composable.DrawEdgeSelectedInV2
-import com.example.canvasexample.composable.DrawEdgeSelectedInV3
 import com.example.canvasexample.composable.DrawEdgeSelectedNDK
-import com.example.canvasexample.composable.DrawNodeSelectedInV2
-import com.example.canvasexample.composable.DrawNodeSelectedInV3
 import com.example.canvasexample.composable.DrawNodeSelectedNDK
+import com.example.canvasexample.composable.DrawNodeSelectedNDKV2
+import com.example.canvasexample.composable.DrawNodeSelectedNDKV3
 import com.example.canvasexample.composable.MotionScaffoldNDK
-import com.example.canvasexample.composable.drawNotificationNode
 import com.example.canvasexample.composable.drawNotificationNodeNDK
 import com.example.canvasexample.db.Node
 import com.example.canvasexample.ui.theme.Typography
@@ -97,7 +92,6 @@ import com.example.canvasexample.ui.theme.Typography
  * todo: 다음에 할때 먼저 룸 디비 확인해서 잘 추가되었는지 확인하기
  * */
 class MainActivity : ComponentActivity() {
-    //    private lateinit var graphViewModel: GraphViewModelV2
     companion object { init { System.loadLibrary("canvasexample") } }
     private lateinit var graphViewModel: GraphViewModelNDK
     private var currentUri: MutableState<String> = mutableStateOf("")
@@ -114,7 +108,6 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-//        graphViewModel = GraphViewModelV2(application)
         graphViewModel = GraphViewModelNDK(application)
         super.onCreate(savedInstanceState)
         setContent {
@@ -131,7 +124,7 @@ class MainActivity : ComponentActivity() {
                                 else openLinkIntent(link)
                             )
                         },
-                        currentUri,
+                        currentUri = currentUri,
                         onEditImageClickListener = {
                             imageLoadLauncher.launch("image/*")
                         }
@@ -139,16 +132,29 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        when(intent.action) {
+            Intent.ACTION_SEND -> {
+                if(intent.type == "text/plain") {
+                    intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+                        Log.i("ACTION_SEND", "onCreate: $it")
+                        graphViewModel.sharedSheet = it
+                    }
+                }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        graphViewModel.opAble()
         graphViewModel.draw()
     }
 
     override fun onPause() {
         super.onPause()
-        /* TODO: Stop drawing */
+        Log.i("TAG", "onPause: enter")
+        graphViewModel.opDisable()
     }
 
     override fun onStop() {
@@ -176,6 +182,14 @@ fun GraphLabNDK(
     var currentNode by remember { mutableStateOf(Node()) }
     var linkText by remember { mutableStateOf("") }
 
+    LaunchedEffect(key1 = viewModel.sharedSheet) {
+        if(viewModel.sharedSheet.isNotEmpty()) {
+            linkText = viewModel.sharedSheet
+            openAddDialog = true
+            viewModel.mutexAcquire()
+        }
+    }
+
     MotionScaffoldNDK(
         containerColor = MaterialTheme.colorScheme.primary,
         floatingActionButton = {
@@ -190,8 +204,10 @@ fun GraphLabNDK(
         },
         onScale = { scale ->
             if (scale > MODE_SWITCHING_SCALE_THRESHOLD) viewModel.opDisable()
-            else viewModel.opAble()
-
+            else {
+                viewModel.opAble()
+                //viewModel.draw()
+            }
         },
         onReadMode = viewModel.able.observeAsState(initial = true).value,
         onFolderButtonClickListener = { openFolderSelectDialog = true }
@@ -217,7 +233,7 @@ fun GraphLabNDK(
 
             viewModel.nodeStates.forEachIndexed { index, nodeState ->
                 key(nodeState.value.id) {
-                    DrawNodeSelectedNDK(
+                    DrawNodeSelectedNDKV2(
                         node = { nodeState.value },
                         dragAble = viewModel.able.observeAsState(initial = true).value,
                         onDragStart = { viewModel.onNodeDragStart(nodeState.value) },
@@ -226,6 +242,7 @@ fun GraphLabNDK(
                     ) {
                         Log.e("TAG", "GraphLab: onClick: ${nodeState.value}")
                         currentNode = nodeState.value
+                        currentUri.value = currentNode.imgUri
                         openNodeDetailDialog = true
                     }
                 }
@@ -401,7 +418,11 @@ fun GraphLabNDK(
             )
         }
 
-        if (openNodeDetailDialog) {
+        AnimatedVisibility(
+            visible = openNodeDetailDialog,
+            enter = slideInVertically { it } + fadeIn(initialAlpha = 0.2f),
+            exit = slideOutVertically { it } + fadeOut()
+        ) {
 
             var isEditMode by remember { mutableStateOf(false) }
 
@@ -506,7 +527,9 @@ fun GraphLabNDK(
                                 ) {
                                     IconButton(
                                         modifier = Modifier.align(Alignment.Center),
-                                        onClick = { openImageEditDialog = true }
+                                        onClick = {
+                                            openImageEditDialog = true
+                                        }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Settings,
@@ -633,6 +656,7 @@ fun GraphLabNDK(
                 },
             )
         }
+
 
         if (openFolderSelectDialog) {
 

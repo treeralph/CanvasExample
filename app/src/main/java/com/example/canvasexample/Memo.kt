@@ -57,12 +57,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
-import com.example.canvasexample.composable.DrawEdgeSelectedInV2
-import com.example.canvasexample.composable.DrawEdgeSelectedInV3
-import com.example.canvasexample.composable.DrawNodeSelectedInV2
-import com.example.canvasexample.composable.DrawNodeSelectedInV3
-import com.example.canvasexample.composable.MotionScaffoldInV2
-import com.example.canvasexample.composable.drawNotificationNode
 import com.example.canvasexample.db.Node
 import com.example.canvasexample.ui.theme.Typography
 
