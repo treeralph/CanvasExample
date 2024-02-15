@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -73,11 +74,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.canvasexample.ui.theme.CanvasExampleTheme
 import com.example.canvasexample.composable.DrawEdgeSelectedNDK
 import com.example.canvasexample.composable.DrawNodeSelectedNDK
@@ -420,10 +423,13 @@ fun GraphLabNDK(
 
         AnimatedVisibility(
             visible = openNodeDetailDialog,
-            enter = slideInVertically { it } + fadeIn(initialAlpha = 0.2f),
+            enter = slideInVertically(animationSpec = tween(durationMillis = 1000)) { it } +
+                    fadeIn(
+                        initialAlpha = 0f,
+                        animationSpec = tween(durationMillis = 1000)
+                    ),
             exit = slideOutVertically { it } + fadeOut()
         ) {
-
             var isEditMode by remember { mutableStateOf(false) }
 
             Dialog(onDismissRequest = { openNodeDetailDialog = false }) {
@@ -512,7 +518,7 @@ fun GraphLabNDK(
                                     modifier = Modifier.fillMaxWidth(),
                                     model = currentNode.imgUri,
                                     contentDescription = "",
-                                    contentScale = ContentScale.FillWidth
+                                    contentScale = ContentScale.FillWidth,
                                 )
                             }
                             if (isEditMode) {

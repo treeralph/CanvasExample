@@ -143,7 +143,7 @@ class GraphViewModelNDK(application: Application): ViewModel() {
      * History check 후에 Folder 를 가져 온 후에 있으면 만들고 없으면 제일 위에 꺼.
      * 그리고 어플리케이션 종료 시점에 정상적으로 작동하지 못했다고 하더라도 다음에 정보가 없어지는 것을 방지
      * */
-    private inline fun updateLatestFolder() {
+    private fun updateLatestFolder() {
         Log.e(TAG, "updateLatestFolder: ")
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
@@ -223,7 +223,7 @@ class GraphViewModelNDK(application: Application): ViewModel() {
         }
     }
 
-    fun editNodePrevious(node: Node) {
+    fun editNode(node: Node) {
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
                 _db.nodeDao().updateNodes(listOf(node))
@@ -234,30 +234,33 @@ class GraphViewModelNDK(application: Application): ViewModel() {
         }
     }
 
-    fun editNode(node: Node) {
+    fun editNodeForTest(node: Node) {
         viewModelScope.launch(Dispatchers.IO) {
             _mutex.withLock {
                 _db.nodeDao().updateNodes(listOf(node))
-                swapNode(_nodeId2Index[node.id]!!, _nodesNDK.size - 1)
-                _nodesNDK.removeAt(_nodesNDK.size - 1)
-                _nodeStates.removeAt(_nodesNDK.size - 1)
-                _nodesNDK.add(node)
-                _nodeStates.add(mutableStateOf(node))
+                val targetIndex = _nodesNDK.size - 1
+                swapNode(_nodeId2Index[node.id]!!, targetIndex)
+                _nodeStates.removeAt(targetIndex)
+                _nodesNDK.removeAt(targetIndex)
+                Thread.sleep(1000)
+                _nodesNDK.add(node.copy())
+                _nodeStates.add(mutableStateOf(node.copy()))
             }
-            deleteNode(node)
-            _mutex.withLock {
-                val id = _nodeDao.insertNode(
-                    x = node.x,
-                    y = node.y,
-                    imgUri = node.imgUri,
-                    linkUrl = node.linkUrl,
-                    content = node.content,
-                    description = node.description,
-                    folder = _currentFolderId.value ?: -1
-                )
-                val node = _nodeDao.getNodeById(id)
 
-            }
+
+//            deleteNode(node)
+//            _mutex.withLock {
+//                val id = _nodeDao.insertNode(
+//                    x = node.x,
+//                    y = node.y,
+//                    imgUri = node.imgUri,
+//                    linkUrl = node.linkUrl,
+//                    content = node.content,
+//                    description = node.description,
+//                    folder = _currentFolderId.value ?: -1
+//                )
+//                val node = _nodeDao.getNodeById(id)
+//            }
         }
     }
 

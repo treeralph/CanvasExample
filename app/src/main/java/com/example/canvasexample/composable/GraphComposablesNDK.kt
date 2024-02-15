@@ -1,5 +1,6 @@
 package com.example.canvasexample.composable
 
+import android.content.res.Resources
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -7,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
@@ -97,11 +99,8 @@ fun MotionScaffoldNDK(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-        scale *= zoomChange
-        offset += offsetChange
-        onScale(scale)
-    }
+    val width  = Resources.getSystem().displayMetrics.widthPixels / 2f
+    val height = Resources.getSystem().displayMetrics.heightPixels / 2f
 
     Scaffold(
         modifier = modifier,
@@ -171,7 +170,17 @@ fun MotionScaffoldNDK(
             modifier = Modifier
                 .padding(it)
                 .fillMaxSize()
-                .transformable(state = state)
+                .pointerInput(Unit) {
+                    detectTransformGestures { centroid, pan, zoom, _ ->
+                        if (zoom != 1f) {
+                            scale *= zoom
+                            offset += Offset(
+                                x = (1 - zoom) * (centroid.x - offset.x - width),
+                                y = (1 - zoom) * (centroid.y - offset.y - height)
+                            )
+                        } else offset += pan
+                    }
+                }
                 .graphicsLayer(
                     scaleX = scale,
                     scaleY = scale,
