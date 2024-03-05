@@ -1,6 +1,116 @@
+unstable class LinkCapsule {
+  stable var title: String
+  stable var description: String
+  stable var imageUrl: String
+  <runtime stability> = Unstable
+}
+stable class GraphViewModelNDK {
+  stable val _db: AppDatabase
+  runtime val _nodeDao: NodeDao
+  runtime val _edgeDao: EdgeDao
+  runtime val _folderDao: FolderDao
+  runtime val _historyDao: HistoryDao
+  unstable val _nodesNDK: ArrayList<Node>{ kotlin.collections.TypeAliasesKt.ArrayList<Node> }
+  unstable val _edgesNDK: ArrayList<Edge>{ kotlin.collections.TypeAliasesKt.ArrayList<Edge> }
+  unstable val _nodeId2Index: HashMap<Long, Int>{ kotlin.collections.TypeAliasesKt.HashMap<Long, Int> }
+  unstable val _nodeStates: MutableList<MutableState<Node>>
+  unstable val _edgeStates: MutableList<MutableState<Edge>>
+  unstable val nodeStates: List<MutableState<Node>>
+  unstable val edgeStates: List<MutableState<Edge>>
+  unstable val nodeId2Index: Map<Long, Int>
+  stable val _folders: SnapshotStateList<Folder>
+  unstable val _notificationNodes: MutableList<MutableState<Node>>
+  unstable val folders: List<Folder>
+  unstable val notificationNodes: List<MutableState<Node>>
+  unstable var _currentFolder: Folder?
+  unstable val _currentFolderId: MutableLiveData<Long>
+  unstable val currentFolderId: LiveData<Long>
+  unstable val _mutex: Mutex
+  unstable val _able: MutableLiveData<@[FlexibleNullability] Boolean?>
+  unstable val able: LiveData<Boolean>
+  stable var sharedSheet: String
+  stable val _onMovedNode: SnapshotStateList<Node>
+}
 unstable class MainActivity {
   stable var graphViewModel: GraphViewModelNDK
   stable var currentUri: MutableState<String>
   unstable val imageLoadLauncher: ActivityResultLauncher<@[FlexibleNullability] String?>
+  <runtime stability> = Unstable
+}
+unstable class Quadtree {
+  unstable var nodes: MutableList<Node>
+  stable var sumMass: Double
+  stable var centerX: Double
+  stable var centerY: Double
+  stable var size: Double
+  unstable var NWTree: Quadtree?
+  unstable var NETree: Quadtree?
+  unstable var SWTree: Quadtree?
+  unstable var SETree: Quadtree?
+  <runtime stability> = Unstable
+}
+unstable class LogAttractionDegreeDistributedAntiCollision {
+  stable var coefficient: Double
+  <runtime stability> = Unstable
+}
+unstable class LinAttractionDegreeDistributedAntiCollision {
+  stable var coefficient: Double
+  <runtime stability> = Unstable
+}
+unstable class StrongGravity {
+  stable var coefficient: Double
+  <runtime stability> = Unstable
+}
+unstable class LinRepulsionAntiCollision {
+  stable var coefficient: Double
+  <runtime stability> = Unstable
+}
+stable class AttractionForce {
+  <runtime stability> = Stable
+}
+stable class RepulsionForce {
+  <runtime stability> = Stable
+}
+stable class AppDatabase {
+  <runtime stability> = Stable
+}
+stable class Node {
+  stable var id: Long
+  stable var dx: Double
+  stable var dy: Double
+  stable var old_dx: Double
+  stable var old_dy: Double
+  stable var mass: Double
+  stable var x: Double
+  stable var y: Double
+  stable var size: Double
+  stable var weight: Double
+  stable var createdTime: String
+  stable var imgUri: String
+  stable var linkUrl: String
+  stable var content: String
+  stable var description: String
+  stable var nodeInfo: String
+  stable var nodeColor: String
+  stable var folder: Long
+}
+stable class Edge {
+  stable var id: Long
+  stable var node1: Long
+  stable var node2: Long
+  stable var weight: Double
+  stable var createdTime: String
+  stable var folder: Long
+}
+unstable class Folder {
+  stable var id: Long
+  stable var folderName: String
+  stable var folderInfo: String
+  stable var createdTime: String
+  <runtime stability> = Unstable
+}
+unstable class History {
+  stable var id: Long
+  stable var latestFolder: Long
   <runtime stability> = Unstable
 }

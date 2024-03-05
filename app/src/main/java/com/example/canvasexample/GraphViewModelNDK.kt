@@ -330,6 +330,9 @@ class GraphViewModelNDK(application: Application): ViewModel() {
         }
     }
 
+    /**
+     * naver app을 사용할 경우 다른 방법이 필요하다.
+     * */
     private fun linkParserV2(link: String): LinkCapsule {
         val result = LinkCapsule()
         if (link.isNotEmpty()) {

@@ -2,6 +2,7 @@ package com.example.canvasexample
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.platform.LocalDensity
@@ -28,6 +29,9 @@ fun openYoutubeIntent(youtubeURI: String): Intent {
 fun openLinkIntent(link: String): Intent {
     return Intent(Intent.ACTION_VIEW, Uri.parse(link))
 }
+
+fun isNaver(link: String): Boolean = link.startsWith("https://naver.me/")
+
 
 //@Deprecated
 //fun nodesScaling() {
