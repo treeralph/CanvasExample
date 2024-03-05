@@ -20,12 +20,11 @@ import com.example.canvasexample.db.HistoryDao
 import com.example.canvasexample.db.Node
 import com.example.canvasexample.db.NodeDao
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jsoup.Jsoup
+import java.util.regex.Pattern
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -332,11 +331,38 @@ class GraphViewModelNDK(application: Application): ViewModel() {
 
     /**
      * naver app을 사용할 경우 다른 방법이 필요하다.
+     * naver app에서 추출한 링크에 전처리 과정을 추가 했다.
+     * @author: JUN
      * */
     private fun linkParserV2(link: String): LinkCapsule {
         val result = LinkCapsule()
         if (link.isNotEmpty()) {
-            val doc = Jsoup.connect(link).get()
+            var linkBumper = link
+
+            /** NAVER APP LINK 전처리 */
+            if(isNaver(link)) {
+                // Link from NAVER app
+                val doc = Jsoup.connect(link).get()
+                val metaTags = doc.select("meta")
+                for (metaTag in metaTags) {
+                    if (metaTag.attr("property") == "al:android:url") {
+                        var content = metaTag.attr("content")
+                        content = content.replace("%3A", ":")
+                        content = content.replace("%2F", "/")
+                        content = content.replace("%3D", "=")
+                        content = content.replace("%3F", "?")
+                        content = content.replace("%26", "&")
+                        val regex = "\\?url=([^&]*)&"
+                        val pattern = Pattern.compile(regex)
+                        val matcher = pattern.matcher(content)
+                        if (matcher.find()) {
+                            linkBumper = matcher.group(1)
+                        }
+                    }
+                }
+            }
+
+            val doc = Jsoup.connect(linkBumper).get()
             val metaTags = doc.select("meta[property^=og:]")
             var title: String? = null
             var description: String? = null
@@ -345,17 +371,9 @@ class GraphViewModelNDK(application: Application): ViewModel() {
                 val property = metaTag.attr("property")
                 val content = metaTag.attr("content")
                 when (property) {
-                    "og:title" -> {
-                        title = content
-                    }
-
-                    "og:description" -> {
-                        description = content
-                    }
-
-                    "og:image" -> {
-                        imageUrl = content
-                    }
+                    "og:title" -> title = content
+                    "og:description" -> description = content
+                    "og:image" -> imageUrl = content
                 }
             }
             result.title = title ?: ""
