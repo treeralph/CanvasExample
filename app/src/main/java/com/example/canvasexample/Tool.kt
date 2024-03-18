@@ -27,6 +27,7 @@ fun openYoutubeIntent(youtubeURI: String): Intent {
     }
 }
 fun openLinkIntent(link: String): Intent {
+    Log.e("TAG", "")
     return Intent(Intent.ACTION_VIEW, Uri.parse(link))
 }
 

@@ -187,7 +187,7 @@ class GraphViewModelNDK(application: Application): ViewModel() {
             viewModelScope.launch(Dispatchers.IO) {
                 _mutex.withLock {
                     _db.runInTransaction {
-
+                        
                         _nodesNDK.clear()
                         _edgesNDK.clear()
                         _nodeId2Index.clear()
@@ -229,6 +229,7 @@ class GraphViewModelNDK(application: Application): ViewModel() {
                 val tempIndex = _nodeId2Index[node.id]!!
                 _nodesNDK[tempIndex] = node.copy()
                 _nodeStates[tempIndex].value = node.copy()
+                Log.e(TAG, "editNode: ", )
             }
         }
     }
@@ -329,11 +330,6 @@ class GraphViewModelNDK(application: Application): ViewModel() {
         }
     }
 
-    /**
-     * naver app을 사용할 경우 다른 방법이 필요하다.
-     * naver app에서 추출한 링크에 전처리 과정을 추가 했다.
-     * @author: JUN
-     * */
     private fun linkParserV2(link: String): LinkCapsule {
         val result = LinkCapsule()
         if (link.isNotEmpty()) {
